@@ -1,0 +1,19 @@
+{
+  "name": "select-a-committee",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nzskeptics/select-a-committee.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nzskeptics/select-a-committee/issues"
+  },
+  "homepage": "https://github.com/nzskeptics/select-a-committee#readme"
+}
