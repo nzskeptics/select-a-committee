@@ -1,5 +1,5 @@
 
-import {existsSync, readFileSync, writeFileSync} from 'fs';
+import {existsSync, readFileSync, writeFileSync, mkdirSync} from 'fs';
 import pdf from 'pdf-parse/lib/pdf-parse.js';
 // import {fromPath} from "pdf2pic";
 // import Tesseract from 'tesseract.js';
@@ -114,6 +114,10 @@ async function processSubmission(data) {
 }
 
 async function getAll() {
+	if (!existsSync('cache')) mkdirSync('cache');
+	if (!existsSync('cache/html')) mkdirSync('cache/html');
+	if (!existsSync('cache/metadata')) mkdirSync('cache/metadata');
+	if (!existsSync('cache/pdf')) mkdirSync('cache/pdf');
 	const urls = {
 		search: 'https://bills.parliament.nz/api/data/v1/search',
 		page: 'https://www.parliament.nz',
@@ -127,12 +131,12 @@ async function getAll() {
 			metadata: urls.page + '/en/document/' + submission.id + '/metadata',
 			pdf: urls.pdf + submission.id,
 		};
-		submission.metadata = await getSubmissionHTML(submission.urls.metadata, submission.id, 'metadata');
-		submission.html = await getSubmissionHTML(submission.urls.page, submission.id);
-		// Use regex to find the key in an HTML link that looks like <a href="/resource/en-NZ/53SCHE_EVI_130084_HE43428/7f637b73a4d81b311744d8b129433b421ddd1606">, where the key is "7f637b73a4d81b311744d8b129433b421ddd1606"
-		// submission.key = submission.html.match(/\/resource\/en-NZ\/[a-zA-Z0-9_]+\/[a-zA-Z0-9_]+\//)[0];
-		submission.key = submission.html.match(/\/resource\/en-NZ\/[A-Z0-9_]+\/([a-z0-9]+)"/)[1];
-		submission.urls.pdf += '/' + submission.key;
+		// submission.metadata = await getSubmissionHTML(submission.urls.metadata, submission.id, 'metadata');
+		if (!existsSync(`cache/pdf/${submission.id}.pdf`)) {
+			submission.html = await getSubmissionHTML(submission.urls.page, submission.id);
+			submission.key = submission.html.match(/\/resource\/en-NZ\/[A-Z0-9_]+\/([a-z0-9]+)"/)[1];
+			submission.urls.pdf += '/' + submission.key;
+		}
 		submission.pdf = await getSubmissionPDF(submission.urls.pdf, submission.id);
 		// await processSubmission(submission.pdf);
 	}
