@@ -1,30 +1,33 @@
 
 import {existsSync, readFileSync, writeFileSync} from 'fs';
-import {fromPath} from "pdf2pic";
-import Tesseract from 'tesseract.js';
+import pdf from 'pdf-parse/lib/pdf-parse.js';
+// import {fromPath} from "pdf2pic";
+// import Tesseract from 'tesseract.js';
 import TurndownService from 'turndown';
-const turndownService = new TurndownService({headingStyle: 'atx'});
-import rake from 'rake-js';
+// const turndownService = new TurndownService({headingStyle: 'atx'});
+// import rake from 'rake-js';
 import {reporter} from 'vfile-reporter';
-import {toString} from 'nlcst-to-string';
+// import {toString} from 'nlcst-to-string';
 import {unified} from 'unified';
 import retextEnglish from 'retext-english';
 import retextEquality from 'retext-equality';
-import retextIndefiniteArticle from 'retext-indefinite-article';
-import retextContractions from 'retext-contractions';
-import retextDiacritics from 'retext-diacritics';
+// import retextIndefiniteArticle from 'retext-indefinite-article';
+// import retextContractions from 'retext-contractions';
+// import retextDiacritics from 'retext-diacritics';
 import retextStringify from 'retext-stringify';
 import retextPos from 'retext-pos';
 import retextKeywords from 'retext-keywords';
 import retextReadability from 'retext-readability';
-import retextRepeatedWords from 'retext-repeated-words';
-import retextSentenceSpacing from 'retext-sentence-spacing';
-import retextRedundantAcronyms from 'retext-redundant-acronyms';
+// import retextRepeatedWords from 'retext-repeated-words';
+// import retextSentenceSpacing from 'retext-sentence-spacing';
+// import retextRedundantAcronyms from 'retext-redundant-acronyms';
 import retextSpell from 'retext-spell';
-import retextOveruse from 'retext-overuse';
+// import retextOveruse from 'retext-overuse';
 import retextUsage from 'retext-usage';
+import retextProfanities from 'retext-profanities';
+import retextSentiment from 'retext-sentiment';
 import dictionary from 'dictionary-en-gb';
-import {removeStopwords} from 'stopword';
+// import {removeStopwords} from 'stopword';
 
 async function getSubmissions(url) {
 	const path = 'cache/submissions.json';
@@ -79,33 +82,35 @@ async function getSubmissionPDF(url, id) {
 	return data;
 }
 
-async function processSubmission(text) {
+async function processSubmission(data) {
+	const text = await pdf(data);
 	const processor = unified()
 		.use(retextEnglish)
 		.use(retextEquality)
-		.use(retextIndefiniteArticle)
-		.use(retextContractions)
-		.use(retextDiacritics)
+		// .use(retextIndefiniteArticle)
+		// .use(retextContractions)
+		// .use(retextDiacritics)
 		.use(retextStringify)
 		.use(retextPos)
 		.use(retextKeywords)
 		.use(retextReadability)
-		.use(retextRepeatedWords)
-		.use(retextSentenceSpacing)
-		.use(retextRedundantAcronyms)
+		// .use(retextRepeatedWords)
+		// .use(retextSentenceSpacing)
+		// .use(retextRedundantAcronyms)
 		.use(retextSpell, dictionary)
-		.use(retextOveruse)
-		.use(retextUsage);
-	const file = await processor.process(text);
+		// .use(retextOveruse)
+		.use(retextUsage)
+		.use(retextProfanities)
+		.use(retextSentiment);
+	const file = await processor.process(text.text);
 	console.log(reporter(file));
 	console.log(file.data.keywords);
-	console.log(file.data.overusedWords);
-	console.log(file.data.repeatedWords);
-	console.log(file.data.redundantAcronyms);
-	console.log(file.data.sentenceSpacing);
+	// console.log(file.data.overusedWords);
 	console.log(file.data.readability);
-	console.log(file.data.spellingSuggestions);
+	// console.log(file.data.spellingSuggestions);
 	console.log(file.data.suggestions);
+	console.log(file.data.sentiment);
+	console.log(file.data.profanities);
 }
 
 async function getAll() {
@@ -129,6 +134,7 @@ async function getAll() {
 		submission.key = submission.html.match(/\/resource\/en-NZ\/[A-Z0-9_]+\/([a-z0-9]+)"/)[1];
 		submission.urls.pdf += '/' + submission.key;
 		submission.pdf = await getSubmissionPDF(submission.urls.pdf, submission.id);
+		// await processSubmission(submission.pdf);
 	}
 }
 
