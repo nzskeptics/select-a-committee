@@ -86,31 +86,31 @@ async function processSubmission(data) {
 	const text = await pdf(data);
 	const processor = unified()
 		.use(retextEnglish)
-		.use(retextEquality)
+		// .use(retextEquality)
 		// .use(retextIndefiniteArticle)
 		// .use(retextContractions)
 		// .use(retextDiacritics)
 		.use(retextStringify)
 		.use(retextPos)
 		.use(retextKeywords)
-		.use(retextReadability)
+		// .use(retextReadability)
 		// .use(retextRepeatedWords)
 		// .use(retextSentenceSpacing)
 		// .use(retextRedundantAcronyms)
-		.use(retextSpell, dictionary)
+		// .use(retextSpell, dictionary)
 		// .use(retextOveruse)
-		.use(retextUsage)
+		// .use(retextUsage)
 		.use(retextProfanities)
 		.use(retextSentiment);
 	const file = await processor.process(text.text);
-	console.log(reporter(file));
-	console.log(file.data.keywords);
-	// console.log(file.data.overusedWords);
-	console.log(file.data.readability);
-	// console.log(file.data.spellingSuggestions);
-	console.log(file.data.suggestions);
-	console.log(file.data.sentiment);
-	console.log(file.data.profanities);
+	console.log('Report', reporter(file));
+	// console.log('Keywords', file.data.keywords);
+	// console.log('Overuse', file.data.overusedWords);
+	// console.log('Readability', file.data.readability);
+	// console.log('Spelling', file.data.spellingSuggestions);
+	// console.log('Suggestions', file.data.suggestions);
+	console.log('Sentiment', file.data.valence, file.data.polarity);
+	// console.log('Profanities', file.data.profanities);
 }
 
 async function getAll() {
@@ -131,14 +131,14 @@ async function getAll() {
 			metadata: urls.page + '/en/document/' + submission.id + '/metadata',
 			pdf: urls.pdf + submission.id,
 		};
-		// submission.metadata = await getSubmissionHTML(submission.urls.metadata, submission.id, 'metadata');
 		if (!existsSync(`cache/pdf/${submission.id}.pdf`)) {
 			submission.html = await getSubmissionHTML(submission.urls.page, submission.id);
+			submission.metadata = await getSubmissionHTML(submission.urls.metadata, submission.id, 'metadata');
 			submission.key = submission.html.match(/\/resource\/en-NZ\/[A-Z0-9_]+\/([a-z0-9]+)"/)[1];
 			submission.urls.pdf += '/' + submission.key;
 		}
 		submission.pdf = await getSubmissionPDF(submission.urls.pdf, submission.id);
-		// await processSubmission(submission.pdf);
+		await processSubmission(submission.pdf);
 	}
 }
 
