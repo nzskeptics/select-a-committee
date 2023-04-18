@@ -28,6 +28,8 @@ import retextProfanities from 'retext-profanities';
 import retextSentiment from 'retext-sentiment';
 import dictionary from 'dictionary-en-gb';
 // import {removeStopwords} from 'stopword';
+import Sentiment from 'sentiment';
+const sentiment = new Sentiment();
 
 async function getSubmissions(url) {
 	const path = 'cache/submissions.json';
@@ -82,6 +84,16 @@ async function getSubmissionPDF(url, id) {
 	return data;
 }
 
+async function pdfToText(data) {
+	const converted = await pdf(data);
+	// console.log(converted);
+	// Remove page numbers and footers
+	// Page 1 of 1
+	// 1/02/2023file:///C:/Windows/Temp/BCL%20Technologies/easyPDF%208/EPOAE2C.html
+	const text = converted.text.replace(/Page \d+ of \d+\n/g, '').replace(/\d+\/\d+\/\d+file:(.*?).html/g, '');
+	return text;
+}
+
 async function processSubmission(data) {
 	const text = await pdf(data);
 	const processor = unified()
@@ -100,16 +112,17 @@ async function processSubmission(data) {
 		// .use(retextSpell, dictionary)
 		// .use(retextOveruse)
 		// .use(retextUsage)
-		.use(retextProfanities)
+		.use(retextProfanities, {sureness: 2})
 		.use(retextSentiment);
 	const file = await processor.process(text.text);
+	const sent = sentiment.analyze(text.text);
 	console.log('Report', reporter(file));
 	// console.log('Keywords', file.data.keywords);
 	// console.log('Overuse', file.data.overusedWords);
 	// console.log('Readability', file.data.readability);
 	// console.log('Spelling', file.data.spellingSuggestions);
 	// console.log('Suggestions', file.data.suggestions);
-	console.log('Sentiment', file.data.valence, file.data.polarity);
+	console.log('Sentiment', sent.comparative);
 	// console.log('Profanities', file.data.profanities);
 }
 
@@ -124,6 +137,7 @@ async function getAll() {
 		pdf: 'https://www.parliament.nz/resource/en-NZ/',
 	};
 	const submissions = await getSubmissions(urls.search);
+	console.log('Submissions:', submissions.length);
 	for (const submission of submissions.sort((a, b) => a.title.localeCompare(b.title))) {
 		console.info(submission.title);
 		submission.urls = {
@@ -138,7 +152,9 @@ async function getAll() {
 			submission.urls.pdf += '/' + submission.key;
 		}
 		submission.pdf = await getSubmissionPDF(submission.urls.pdf, submission.id);
-		await processSubmission(submission.pdf);
+		submission.text = await pdfToText(submission.pdf);
+		// console.log(submission.text);
+		// await processSubmission(submission.pdf);
 	}
 }
 
